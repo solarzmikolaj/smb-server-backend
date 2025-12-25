@@ -44,7 +44,7 @@ public class SmbService
     {
         try
         {
-            var fullPath = Path.Combine(_smbPath, subPath);
+            var fullPath = CombineSmbPath(_smbPath, subPath);
             return Directory.Exists(fullPath);
         }
         catch (Exception ex)
@@ -77,7 +77,7 @@ public class SmbService
     {
         try
         {
-            var targetPath = string.IsNullOrEmpty(subPath) ? _smbPath : Path.Combine(_smbPath, subPath);
+            var targetPath = string.IsNullOrEmpty(subPath) ? _smbPath : CombineSmbPath(_smbPath, subPath);
             
             if (!Directory.Exists(targetPath))
             {
@@ -149,7 +149,7 @@ public class SmbService
                 throw new DirectoryNotFoundException($"Katalog SMB nie istnieje: {_smbPath}");
             }
 
-            var fullPath = Path.Combine(_smbPath, filePath);
+            var fullPath = CombineSmbPath(_smbPath, filePath);
             var fileInfo = new FileInfo(fullPath);
             
             return fileInfo.Exists ? fileInfo : null;
@@ -170,7 +170,7 @@ public class SmbService
                 throw new DirectoryNotFoundException($"Katalog SMB nie istnieje: {_smbPath}");
             }
 
-            var fullPath = Path.Combine(_smbPath, filePath);
+            var fullPath = CombineSmbPath(_smbPath, filePath);
             return new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
         catch (FileNotFoundException)
@@ -194,7 +194,7 @@ public class SmbService
                 throw new DirectoryNotFoundException($"Katalog SMB nie istnieje: {_smbPath}");
             }
 
-            var fullPath = Path.Combine(_smbPath, filePath);
+            var fullPath = CombineSmbPath(_smbPath, filePath);
             
             // Upewnij się, że katalog docelowy istnieje
             var directory = Path.GetDirectoryName(fullPath);
@@ -226,7 +226,7 @@ public class SmbService
                 throw new DirectoryNotFoundException($"Katalog SMB nie istnieje: {_smbPath}");
             }
 
-            var fullPath = Path.Combine(_smbPath, folderPath);
+            var fullPath = CombineSmbPath(_smbPath, folderPath);
             
             if (Directory.Exists(fullPath))
             {
@@ -253,7 +253,7 @@ public class SmbService
                 throw new DirectoryNotFoundException($"Katalog SMB nie istnieje: {_smbPath}");
             }
 
-            var fullPath = Path.Combine(_smbPath, filePath);
+            var fullPath = CombineSmbPath(_smbPath, filePath);
             
             if (!File.Exists(fullPath))
             {
@@ -278,7 +278,7 @@ public class SmbService
     {
         try
         {
-            var targetPath = string.IsNullOrEmpty(subPath) ? _smbPath : Path.Combine(_smbPath, subPath);
+            var targetPath = string.IsNullOrEmpty(subPath) ? _smbPath : CombineSmbPath(_smbPath, subPath);
             
             if (!Directory.Exists(targetPath))
             {
@@ -286,7 +286,7 @@ public class SmbService
             }
 
             var results = new List<(FileInfo, string)>();
-            var basePath = string.IsNullOrEmpty(subPath) ? _smbPath : Path.Combine(_smbPath, subPath);
+            var basePath = string.IsNullOrEmpty(subPath) ? _smbPath : CombineSmbPath(_smbPath, subPath);
             
             SearchFilesRecursive(basePath, subPath ?? "", results);
             
@@ -306,7 +306,7 @@ public class SmbService
     {
         try
         {
-            var targetPath = string.IsNullOrEmpty(subPath) ? _smbPath : Path.Combine(_smbPath, subPath);
+            var targetPath = string.IsNullOrEmpty(subPath) ? _smbPath : CombineSmbPath(_smbPath, subPath);
             
             if (!Directory.Exists(targetPath))
             {
@@ -314,7 +314,7 @@ public class SmbService
             }
 
             var results = new List<(DirectoryInfo, string)>();
-            var basePath = string.IsNullOrEmpty(subPath) ? _smbPath : Path.Combine(_smbPath, subPath);
+            var basePath = string.IsNullOrEmpty(subPath) ? _smbPath : CombineSmbPath(_smbPath, subPath);
             
             SearchDirectoriesRecursive(basePath, subPath ?? "", results);
             
@@ -411,7 +411,7 @@ public class SmbService
                 throw new DirectoryNotFoundException($"Katalog SMB nie istnieje: {_smbPath}");
             }
 
-            var fullPath = Path.Combine(_smbPath, folderPath);
+            var fullPath = CombineSmbPath(_smbPath, folderPath);
             
             if (!Directory.Exists(fullPath))
             {
@@ -441,7 +441,7 @@ public class SmbService
                 throw new DirectoryNotFoundException($"Katalog SMB nie istnieje: {_smbPath}");
             }
 
-            var fullPath = Path.Combine(_smbPath, filePath);
+            var fullPath = CombineSmbPath(_smbPath, filePath);
             
             if (!File.Exists(fullPath))
             {
@@ -476,8 +476,8 @@ public class SmbService
                 throw new DirectoryNotFoundException($"Katalog SMB nie istnieje: {_smbPath}");
             }
 
-            var fullSourcePath = Path.Combine(_smbPath, sourcePath);
-            var fullDestinationPath = Path.Combine(_smbPath, destinationPath);
+            var fullSourcePath = CombineSmbPath(_smbPath, sourcePath);
+            var fullDestinationPath = CombineSmbPath(_smbPath, destinationPath);
 
             if (!File.Exists(fullSourcePath))
             {
@@ -539,8 +539,8 @@ public class SmbService
                 throw new DirectoryNotFoundException($"Katalog SMB nie istnieje: {_smbPath}");
             }
 
-            var fullSourcePath = Path.Combine(_smbPath, sourcePath);
-            var fullDestinationPath = Path.Combine(_smbPath, destinationPath);
+            var fullSourcePath = CombineSmbPath(_smbPath, sourcePath);
+            var fullDestinationPath = CombineSmbPath(_smbPath, destinationPath);
 
             if (!Directory.Exists(fullSourcePath))
             {
@@ -566,8 +566,8 @@ public class SmbService
             var allDirectories = GetAllDirectoriesRecursive(sourcePath).ToList();
             foreach (var (dir, relativePath) in allDirectories)
             {
-                var destDirPath = Path.Combine(destinationPath, relativePath);
-                var fullDestDirPath = Path.Combine(_smbPath, destDirPath);
+                var destDirPath = CombineSmbPath(destinationPath, relativePath);
+                var fullDestDirPath = CombineSmbPath(_smbPath, destDirPath);
                 if (!Directory.Exists(fullDestDirPath))
                 {
                     Directory.CreateDirectory(fullDestDirPath);
@@ -577,8 +577,8 @@ public class SmbService
             // Przenieś wszystkie pliki
             foreach (var (file, relativePath) in allFiles)
             {
-                var destFilePath = Path.Combine(destinationPath, relativePath);
-                var fullDestFilePath = Path.Combine(_smbPath, destFilePath);
+                var destFilePath = CombineSmbPath(destinationPath, relativePath);
+                var fullDestFilePath = CombineSmbPath(_smbPath, destFilePath);
                 var destDir = Path.GetDirectoryName(fullDestFilePath);
                 
                 if (!string.IsNullOrEmpty(destDir) && !Directory.Exists(destDir))
@@ -586,8 +586,8 @@ public class SmbService
                     Directory.CreateDirectory(destDir);
                 }
 
-                var sourceFilePath = Path.Combine(sourcePath, relativePath);
-                var fullSourceFilePath = Path.Combine(_smbPath, sourceFilePath);
+                var sourceFilePath = CombineSmbPath(sourcePath, relativePath);
+                var fullSourceFilePath = CombineSmbPath(_smbPath, sourceFilePath);
                 
                 long fileSize = file.Length;
                 long fileBytesRead = 0;
@@ -657,6 +657,27 @@ public class SmbService
         {
             // Ignoruj błędy
         }
+    }
+
+    /// <summary>
+    /// Łączy ścieżkę SMB (UNC) z podścieżką, obsługując poprawnie backslashe i forward slashe
+    /// </summary>
+    private string CombineSmbPath(string basePath, string subPath)
+    {
+        if (string.IsNullOrEmpty(subPath))
+            return basePath;
+
+        // Normalizuj separator w subPath (zamień forward slashe na backslashe dla Windows UNC)
+        subPath = subPath.Replace('/', '\\');
+        
+        // Usuń wiodące backslashe z subPath
+        subPath = subPath.TrimStart('\\');
+        
+        // Jeśli basePath kończy się backslashem, usuń go
+        basePath = basePath.TrimEnd('\\');
+        
+        // Połącz ścieżki
+        return $"{basePath}\\{subPath}";
     }
 }
 
