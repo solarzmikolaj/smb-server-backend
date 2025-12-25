@@ -12,19 +12,12 @@ public class SmbService
     public SmbService(IConfiguration configuration, ILogger<SmbService> logger)
     {
         _logger = logger;
-        var smbSettings = configuration.GetSection("SmbSettings");
-        _smbPath = smbSettings["ServerPath"] ?? throw new InvalidOperationException("SmbSettings:ServerPath nie jest skonfigurowane");
         
-        // Jeśli są podane dane logowania, można je użyć do mapowania dysku
-        var username = smbSettings["Username"];
-        var password = smbSettings["Password"];
-        var domain = smbSettings["Domain"];
+        // Hardcoded ustawienia SMB - nie bierz z appsettings.json
+        _smbPath = "\\\\192.168.100.45\\sambashare";
+        // Username: ms, Password: 3505, Domain: (puste)
 
-        if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
-        {
-            // Uwaga: W produkcji użyj bezpieczniejszego sposobu przechowywania haseł
-            _logger.LogInformation($"Konfiguracja SMB: {_smbPath}");
-        }
+        _logger.LogInformation($"Konfiguracja SMB (hardcoded): {_smbPath}");
     }
 
     public bool DirectoryExists()
@@ -223,23 +216,86 @@ public class SmbService
         {
             if (!DirectoryExists())
             {
+                _logger.LogError($"Katalog SMB nie istnieje: {_smbPath}");
                 throw new DirectoryNotFoundException($"Katalog SMB nie istnieje: {_smbPath}");
             }
 
             var fullPath = CombineSmbPath(_smbPath, folderPath);
             
+            _logger.LogInformation($"Próba utworzenia folderu: {fullPath}");
+            
             if (Directory.Exists(fullPath))
             {
+                _logger.LogInformation($"Folder już istnieje: {fullPath}");
                 return false; // Folder już istnieje
             }
             
+            // Directory.CreateDirectory tworzy wszystkie nieistniejące foldery w ścieżce
+            // Ale najpierw sprawdźmy, czy folder nadrzędny istnieje
+            var parentPath = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrEmpty(parentPath) && !Directory.Exists(parentPath))
+            {
+                _logger.LogInformation($"Folder nadrzędny nie istnieje, próba utworzenia: {parentPath}");
+                // Spróbuj utworzyć folder nadrzędny rekurencyjnie
+                CreateDirectoryRecursive(parentPath);
+            }
+            
             Directory.CreateDirectory(fullPath);
-            _logger.LogInformation($"Folder utworzony: {folderPath}");
-            return true;
+            
+            // Sprawdź, czy folder został faktycznie utworzony
+            if (Directory.Exists(fullPath))
+            {
+                _logger.LogInformation($"Folder utworzony pomyślnie: {fullPath}");
+                return true;
+            }
+            else
+            {
+                _logger.LogWarning($"Folder nie został utworzony pomimo braku błędu: {fullPath}");
+                return false;
+            }
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError(ex, $"Brak uprawnień do utworzenia folderu: {folderPath}. Sprawdź uprawnienia użytkownika SMB.");
+            throw new UnauthorizedAccessException($"Brak uprawnień do utworzenia folderu: {folderPath}. Sprawdź uprawnienia użytkownika SMB.", ex);
+        }
+        catch (DirectoryNotFoundException ex)
+        {
+            _logger.LogError(ex, $"Katalog nadrzędny nie istnieje dla: {folderPath}");
+            throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Błąd podczas tworzenia folderu: {folderPath}");
+            _logger.LogError(ex, $"Błąd podczas tworzenia folderu: {folderPath}. Pełna ścieżka: {CombineSmbPath(_smbPath, folderPath)}");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Rekurencyjnie tworzy wszystkie nieistniejące foldery w ścieżce
+    /// </summary>
+    private void CreateDirectoryRecursive(string path)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            if (Directory.Exists(path))
+                return;
+
+            var parent = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(parent) && !Directory.Exists(parent))
+            {
+                CreateDirectoryRecursive(parent);
+            }
+
+            Directory.CreateDirectory(path);
+            _logger.LogInformation($"Utworzono folder nadrzędny: {path}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Błąd podczas rekurencyjnego tworzenia folderu: {path}");
             throw;
         }
     }

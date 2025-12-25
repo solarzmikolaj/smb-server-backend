@@ -31,10 +31,28 @@ public class AdminFolderInitializer : IHostedService
 
             if (admin != null && !string.IsNullOrEmpty(admin.SmbFolderPath))
             {
+                _logger.LogInformation($"Sprawdzanie folderu admina: {admin.SmbFolderPath}");
+                
                 if (!smbService.DirectoryExists(admin.SmbFolderPath))
                 {
-                    smbService.CreateDirectory(admin.SmbFolderPath);
-                    _logger.LogInformation($"Folder admina został utworzony: {admin.SmbFolderPath}");
+                    _logger.LogInformation($"Folder admina nie istnieje, próba utworzenia: {admin.SmbFolderPath}");
+                    try
+                    {
+                        var created = smbService.CreateDirectory(admin.SmbFolderPath);
+                        if (created)
+                        {
+                            _logger.LogInformation($"Folder admina został utworzony: {admin.SmbFolderPath}");
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"Nie udało się utworzyć folderu admina (może już istnieć): {admin.SmbFolderPath}");
+                        }
+                    }
+                    catch (Exception createEx)
+                    {
+                        _logger.LogError(createEx, $"Błąd podczas tworzenia folderu admina: {admin.SmbFolderPath}. Sprawdź uprawnienia i dostęp do serwera SMB.");
+                        // Nie rzucamy wyjątku dalej - aplikacja może działać bez folderu admina
+                    }
                 }
                 else
                 {

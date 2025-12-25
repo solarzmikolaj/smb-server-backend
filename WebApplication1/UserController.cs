@@ -555,12 +555,11 @@ public class UserController : ControllerBase
             return NotFound("Użytkownik nie został znaleziony.");
         }
 
-        // Pobierz konfigurację SMB
-        var smbSettings = _configuration.GetSection("SmbSettings");
-        var serverPath = smbSettings["ServerPath"] ?? "\\\\192.168.100.45\\sambashare";
-        var username = smbSettings["Username"] ?? "";
-        var password = smbSettings["Password"] ?? "";
-        var domain = smbSettings["Domain"] ?? "";
+        // Hardcoded ustawienia SMB - nie bierz z appsettings.json
+        var serverPath = "\\\\192.168.100.45\\sambashare";
+        var username = "ms";
+        var password = "3505";
+        var domain = "";
 
         // Utwórz ścieżkę do folderu użytkownika
         var userFolderPath = $"{serverPath}\\{user.SmbFolderPath.Replace('/', '\\')}";
